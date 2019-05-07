@@ -1,0 +1,5 @@
+*.bak
+target/*
+*.imk
+*.iml
+.idea/*
