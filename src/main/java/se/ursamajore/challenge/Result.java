@@ -15,4 +15,12 @@ public class Result {
     public boolean isOk() {
         return ok;
     }
+
+    @Override
+    public String toString() {
+        return "Result{" +
+                "url='" + url + '\'' +
+                ", ok=" + ok +
+                '}';
+    }
 }

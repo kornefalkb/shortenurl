@@ -1,6 +1,7 @@
 package se.ursamajore.challenge;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -79,7 +80,7 @@ public class URLServer extends AbstractVerticle {
      * Load the configuration
      * @return Configuration as JSON object
      */
-    private JsonObject loadConfig() {
+    JsonObject loadConfig() {
         try {
             return new JsonObject(getResourceFileAsString(CONFIG_FILE));
         } catch (Exception e) {
@@ -97,7 +98,7 @@ public class URLServer extends AbstractVerticle {
      *
      * @param request The initial request
      */
-    private void handleRedirect(HttpServerRequest request) {
+    void handleRedirect(HttpServerRequest request) {
         try {
             Result result = database.search(request.path());
             if (result.ok) {
@@ -135,18 +136,16 @@ public class URLServer extends AbstractVerticle {
      *
      * TODO Add other methods, like delete an entry, authorization etc.
      *
-     * @param request
+     * @param request The HTTP request
      */
-    private void handleBase(HttpServerRequest request) {
-        switch (request.method()) {
-            case GET:
-                handleIndex(request);
-                break;
-            case POST:
-                handlePost(request);
-                break;
-            default:
-                request.response().setStatusCode(401).end("401 - Invalid method " + request.method());
+    void handleBase(HttpServerRequest request) {
+        HttpMethod method = request.method();
+        if (HttpMethod.GET.equals(method)) {
+            handleIndex(request);
+        } else if (HttpMethod.POST.equals(method)) {
+            handlePost(request);
+        } else {
+            request.response().setStatusCode(401).end("401 - Invalid method " + request.method());
         }
     }
 
@@ -154,7 +153,7 @@ public class URLServer extends AbstractVerticle {
      * Return a pre-formatted  default page
      * @param request The request to respond to
      */
-    private void handleIndex(HttpServerRequest request) {
+    void handleIndex(HttpServerRequest request) {
         request
                 .response()
                 .setStatusCode(200)
@@ -166,7 +165,7 @@ public class URLServer extends AbstractVerticle {
      *
      * @param request The request
      */
-    private void handlePost(HttpServerRequest request) {
+    void handlePost(HttpServerRequest request) {
         request.bodyHandler(body -> {
             try {
                 String text = body.toString();
@@ -191,5 +190,18 @@ public class URLServer extends AbstractVerticle {
                         .end( new JsonObject().put("error","Invalid JSON " + e.getMessage()).toString());
             }
         });
+        if (!request.isEnded()) {
+            request.response()
+                    .setStatusCode(400)
+                    .end(new JsonObject().put("error","Missing JSON").toString());
+        }
+    }
+
+    /**
+     * For unit testing
+     * @param database the database
+     */
+    void setURLDatabase(URLDatabase database) {
+        this.database = database;
     }
 }
